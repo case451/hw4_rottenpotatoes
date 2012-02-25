@@ -9,6 +9,7 @@ gem 'rails', '3.1.0'
 group :development, :test do
   gem 'sqlite3'
   gem 'ruby-debug19', :require => 'ruby-debug'
+#  gem 'cucumber', '1.1.4'
   gem 'cucumber-rails'
   gem 'cucumber-rails-training-wheels'
   gem 'database_cleaner'
