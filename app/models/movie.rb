@@ -4,9 +4,18 @@ class Movie < ActiveRecord::Base
   end
 
   def self.get_directors_movies(id)
-    director = Movie.find_by_id(id).director
-    Movie.where(%Q{
-        director = (?) and id not in (?)},
-        director, [id])
+    if not id
+      nil
+    else
+      m = Movie.find(id)
+      director = m.director
+      if director and director != ""
+        Movie.where(%Q{
+            director = (?) and id not in (?)},
+            director, [id])
+      else
+        nil
+      end
+    end
   end
 end

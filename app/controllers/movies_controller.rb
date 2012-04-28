@@ -1,5 +1,13 @@
 class MoviesController < ApplicationController
 
+  def list_movies
+    @movies = Movie.all
+    pdf = Prawn::Document.new
+    pdf.text "This is an audit."
+    # Use whatever prawn methods you need on the pdf object to generate the PDF file right here.
+    send_data pdf.render, type: "application/pdf", disposition: "inline"
+  end
+
   def show
     id = params[:id] # retrieve movie ID from URI route
     @movie = Movie.find(id) # look up movie by unique ID
@@ -7,13 +15,12 @@ class MoviesController < ApplicationController
   end
 
   def same_director
-    id = params[:id]
-    @movie = Movie.find(id)
-    if @movie.director and @movie.director != ""
-      @movies = Movie.get_directors_movies(id)
-    else
+    @movie = Movie.find(params[:id])
+    @movies = Movie.get_directors_movies(params[:id])
+    if not @movies
       flash[:warning] = "'#{@movie.title}' has no director info."
       redirect_to movies_path
+      nil
     end
   end
 
