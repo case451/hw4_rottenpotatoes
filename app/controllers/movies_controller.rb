@@ -1,11 +1,34 @@
+require 'prawn'
+
 class MoviesController < ApplicationController
 
   def list_movies
-    @movies = Movie.all
-    pdf = Prawn::Document.new
-    pdf.text "This is an audit."
-    # Use whatever prawn methods you need on the pdf object to generate the PDF file right here.
+    movies = Movie.all
+
+    pdf = Prawn::Document.new( margin: 36, top_margin: 72, bottom_margin: 72 )
+    width  = (72*8.5 - 36*3)/2
+    height = (72*11 - 72*3)/3
+    left   = 0
+    top    = 72*9
+    margin = 36
+
+    corners = {0 => [left, top],                       1 => [left + width + margin, top],
+               2 => [left, top - (height + margin)],   3 => [left + width + margin, top - (height + margin)],
+               4 => [left, top - 2*(height + margin)], 5 => [left + width + margin, top - 2*(height + margin)]}
+
+    movies.each_with_index do |movie, i|
+      if i%6 == 0 && i != 0
+        pdf.start_new_page
+      end
+      pdf.bounding_box Array.new(corners[i%6]), :width => width, :height => height do
+        pdf.stroke_bounds
+        #pdf.pad(5)
+        pdf.text "Resident: "+movie.title
+      end
+    end
+
     send_data pdf.render, type: "application/pdf", disposition: "inline"
+#, filename: "movies_"+Time.now.to_date.to_s+".pdf"
   end
 
   def show
