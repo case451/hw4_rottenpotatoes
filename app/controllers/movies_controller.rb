@@ -3,27 +3,32 @@ require 'prawn'
 class MoviesController < ApplicationController
 
   def list_movies
+    if params[:format].blank?
+      redirect_to :format => 'pdf' and return
+    end
+
     movies = Movie.all
 
     pdf = Prawn::Document.new( margin: 36, top_margin: 72, bottom_margin: 72 )
-    width  = (72*8.5 - 36*3)/2
-    height = (72*11 - 72*3)/3
-    left   = 0
-    top    = 72*9
-    margin = 36
 
-    corners = {0 => [left, top],                       1 => [left + width + margin, top],
-               2 => [left, top - (height + margin)],   3 => [left + width + margin, top - (height + margin)],
-               4 => [left, top - 2*(height + margin)], 5 => [left + width + margin, top - 2*(height + margin)]}
-
+    pdf.define_grid( rows: 3, columns: 2, gutter: 36 )
     movies.each_with_index do |movie, i|
       if i%6 == 0 && i != 0
         pdf.start_new_page
       end
-      pdf.bounding_box Array.new(corners[i%6]), :width => width, :height => height do
+      pdf.grid(i%6/2, i%2).bounding_box do
         pdf.stroke_bounds
-        #pdf.pad(5)
-        pdf.text "Resident: "+movie.title
+        top    = pdf.bounds.top
+        left   = pdf.bounds.left
+        right  = pdf.bounds.right
+        bottom = pdf.bounds.bottom
+        pdf.bounding_box([left+3, top-3], width: right-left-6, height: top-bottom-6) do
+          pdf.text "Movie: "+movie.title
+          pdf.text "Released: "+movie.release_date.to_date.to_s
+          pdf.text "Rating: "+movie.rating+"\n\n\n"
+          pdf.text "Welcome to the future of six boxes on a page. you"+
+          " are now manually aware that I am going to eat you up!"
+        end
       end
     end
 
@@ -56,7 +61,8 @@ class MoviesController < ApplicationController
       ordering,@date_header = {:order => :release_date}, 'hilite'
     end
     @all_ratings = Movie.all_ratings
-    @selected_ratings = params[:ratings] || session[:ratings] || {}
+    ratings_hash = Hash[@all_ratings.collect{|r| [r,1]} ]
+    @selected_ratings = params[:ratings] || session[:ratings] || ratings_hash
 
     if params[:sort] != session[:sort]
       session[:sort] = sort
@@ -64,7 +70,7 @@ class MoviesController < ApplicationController
       redirect_to :sort => sort, :ratings => @selected_ratings and return
     end
 
-    if params[:ratings] != session[:ratings] and @selected_ratings != {}
+    if params[:ratings] != session[:ratings] and @selected_ratings != ratings_hash
       session[:sort] = sort
       session[:ratings] = @selected_ratings
       flash.keep
